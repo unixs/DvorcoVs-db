@@ -25,7 +25,9 @@ where c.cena < 3000;
 
 -- ### Выборка для каталга с учётом скидок
 select * from (
-    select d.descr, p.descr as proizv, c.cena, cena - (cena * sum(pr.skidka) / 100) as cena_so_skidkoy, sum(pr.skidka) as skidka, group_concat(pr.descr) as akcia
+    select d.descr, p.descr as proizv, c.cena,
+           cena - (cena * sum(pr.skidka) / 100) as cena_so_skidkoy,
+           sum(pr.skidka) as skidka, group_concat(pr.descr) as akcia
     from datchiki d
         left join ceny c on d.id = c.datchik_id
         left join proizvoditel p on d.proizv_id = p.id
