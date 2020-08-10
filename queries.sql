@@ -10,21 +10,16 @@ flush privileges;
 
 -- ## Выборка данных
 
--- ### Все датчики
-select * from datchiki;
+-- ### Задание 1 - Все датчики
+select * from datchiki where proizv_id = 1;
 
--- ### Все доступные датчики
+-- ### Задание 2 - Все доступные датчики
 select * from datchiki d
     left join ceny c on d.id = c.datchik_id
 where c.nalichie = true;
 
--- ### Дешевле 3000
-select * from datchiki d
-    left join ceny c on d.id = c.datchik_id
-where c.cena < 3000;
-
--- ### Выборка для каталга с учётом скидок
-select * from (
+-- ### Задание 3, 7, 9, 10, 11
+create view discounts as select * from (
     select d.descr, p.descr as proizv, c.cena,
            cena - (cena * sum(pr.skidka) / 100) as cena_so_skidkoy,
            sum(pr.skidka) as skidka, group_concat(pr.descr) as akcia
@@ -33,8 +28,47 @@ select * from (
         left join proizvoditel p on d.proizv_id = p.id
         left join datchiki_promo dp on d.id = dp.datchik_id
         left join promo pr on pr.id = dp.promo_id
+    where cena < 3000
     group by d.id
+    having cena_so_skidkoy < 2000
 ) q order by cena_so_skidkoy;
+
+select * from discounts where cena < 2000;
+
+-- drop view discounts;
+
+-- ### Задание 4
+select * from datchiki d, datchiki d2;
+
+-- ### Задание 5
+
+-- ### Задание 6
+select * from datchiki where proizv_id = 2
+union
+select * from datchiki where proizv_id = 3;
+
+select * from datchiki where proizv_id in (2, 3)
+intersect
+select * from datchiki where proizv_id in (2);
+
+select * from datchiki where proizv_id in (2, 3)
+except
+select * from datchiki where proizv_id in (2);
+
+-- ### Задание 8
+
+-- ### Задание 12
+
+select * from datchiki d where id in (
+    select datchik_id from datchiki_promo dp
+        left join promo p on dp.promo_id = p.id
+    where skidka > 5 and dp.datchik_id = d.id);
+
+select * from datchiki d where id in (
+    select datchik_id from datchiki_promo dp
+        left join promo p on dp.promo_id = p.id
+    where skidka > 5 and dp.datchik_id = d.id);
+
 
 -- ## Вставка данных
 
