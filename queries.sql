@@ -1,24 +1,66 @@
 -- # Запросы
 
--- ## Администрирование
-
--- ### Создание Базы и пользователя
-create user student@'%' identified by 'studentPW';
-create database project;
-grant all privileges on project.* TO student@'%';
-flush privileges;
-
 -- ## Выборка данных
 
--- ### Задание 1 - Все датчики
+
+-- ### Задание 1
 select * from datchiki where proizv_id = 1;
 
--- ### Задание 2 - Все доступные датчики
-select * from datchiki d
-    left join ceny c on d.id = c.datchik_id
-where c.nalichie = true;
 
--- ### Задание 3, 7, 9, 10, 11
+-- ### Задание 2
+select * from datchiki d, ceny c
+    where d.id = c.datchik_id
+        and c.nalichie = true;
+
+
+-- ### Задание 3
+
+select * from datchiki d, ceny c, proizvoditel p
+    where d.id = c.datchik_id
+        and d.proizv_id = p.id
+        and c.nalichie = true;
+
+
+-- ### Задание 4
+select * from datchiki d, datchiki d2;
+
+
+-- ### Задание 5
+
+select * from datchiki where id in (
+    select c.datchik_id from ceny c
+        left join datchiki_promo dp on c.datchik_id = dp.datchik_id
+        left join promo p on dp.promo_id = p.id
+    where skidka > 10
+    );
+
+select * from datchiki d where exists (
+    select * from ceny c
+        left join datchiki_promo dp on c.datchik_id = dp.datchik_id
+        left join promo p on dp.promo_id = p.id
+    where d.id = dp.datchik_id
+    );
+
+
+-- ### Задание 6
+
+-- 6.1
+select * from datchiki where proizv_id = 2
+union
+select * from datchiki where proizv_id = 3;
+
+-- 6.2
+select * from datchiki where proizv_id in (2, 3)
+intersect
+select * from datchiki where proizv_id in (2);
+
+-- 6.3
+select * from datchiki where proizv_id in (2, 3)
+except
+select * from datchiki where proizv_id in (2);
+
+
+-- ### Задание 7, 9, 10, 11
 create view discounts as select * from (
     select d.descr, p.descr as proizv, c.cena,
            cena - (cena * sum(pr.skidka) / 100) as cena_so_skidkoy,
@@ -37,55 +79,69 @@ select * from discounts where cena < 2000;
 
 -- drop view discounts;
 
--- ### Задание 4
-select * from datchiki d, datchiki d2;
-
--- ### Задание 5
-
--- ### Задание 6
-select * from datchiki where proizv_id = 2
-union
-select * from datchiki where proizv_id = 3;
-
-select * from datchiki where proizv_id in (2, 3)
-intersect
-select * from datchiki where proizv_id in (2);
-
-select * from datchiki where proizv_id in (2, 3)
-except
-select * from datchiki where proizv_id in (2);
 
 -- ### Задание 8
 
+-- 8.1
+select * from datchiki d
+    join ceny c on d.id = c.datchik_id;
+
+-- 8.2
+select * from datchiki d
+    cross join datchiki d2;
+
+-- 8.3
+-- MariaDB is not support NATURAL JOIN without (LEFT|RIGHT) direction
+
+-- 8.4
+select * from datchiki d
+    left outer join ceny c on d.id = c.datchik_id;
+
+-- 8.5
+select * from datchiki
+    natural left outer join ceny_log;
+
+-- 8.6
+select * from datchiki
+    natural right outer join ceny_log;
+
 -- ### Задание 12
 
+-- 12.1
 select * from datchiki d where id in (
     select datchik_id from datchiki_promo dp
         left join promo p on dp.promo_id = p.id
     where skidka > 5 and dp.datchik_id = d.id);
 
+-- 12.2
 select * from datchiki d where id in (
     select datchik_id from datchiki_promo dp
         left join promo p on dp.promo_id = p.id
     where skidka > 5 and dp.datchik_id = d.id);
 
 
--- ## Вставка данных
+-- ## Триггеры
 
--- ### Добавляем в базу новую скидку
-insert into promo (descr, skidka) value ('Супер акция!', 25);
+-- ### Задание 13
 
--- ## Обновление данных
+create trigger if not exists task_13
+    before update on proizvoditel
+for each row
+    update datchiki set proizv_id = NEW.id where proizv_id = OLD.id;
 
--- ### Изменяем название датчика
-update datchiki set descr = 'Датчик угарного газа обычный' where id = 5;
+-- ### Задание 14
 
--- Удаление данных
+delimiter //
+create trigger if not exists task_14
+    before update on ceny
+for each row
+begin
+    if OLD.cena != NEW.cena then
+        insert into ceny_log (datchik_id, old_cena, new_cena) values (OLD.datchik_id, OLD.cena, NEW.cena);
+    end if;
+end; //
+delimiter ;
 
--- ### Удаляем производителя датчиков и связанный с ним ассортимент
-start transaction;
-    delete from datchiki_promo where datchik_id in (select id from datchiki where proizv_id = 3);
-    delete from datchiki where proizv_id = 3;
-    delete from proizvoditel where id = 3;
-commit;
+-- ## Задание 15
 
+-- WHEN keyword is not supported in MariaDB CREATE TRIGGER statement
