@@ -64,7 +64,43 @@ where c.cena > ANY (
     where p.skidka > 10
 );
 
--- 5.5
+-- 5.5 Производители для которых есть датчики со скидкой
+
+select * from proizvoditel p
+    where exists (
+        select * from datchiki d
+            inner join datchiki_promo dp on dp.datchik_id = d.id
+            left join promo pr on pr.id = dp.promo_id
+        where p.id = d.proizv_id
+        );
+
+-- 5.6 Производители для которых есть датчики со скидкой
+
+select * from proizvoditel p
+    where id in (
+        select d.id from datchiki d
+            inner join datchiki_promo dp on dp.datchik_id = d.id
+            left join promo pr on pr.id = dp.promo_id
+        where p.id = d.proizv_id
+        );
+
+-- 5.7 Производители для которых датчики стоят не более 4000
+
+select * from proizvoditel p
+    where 4000 >= all (
+        select cena from ceny c
+            inner join datchiki d on d.id = c.datchik_id
+        where d.proizv_id = p.id
+        );
+
+-- 5.8 Производители для которых есть датчики ценой не более 4000
+
+select * from proizvoditel p
+    where 4000 >= any (
+        select cena from ceny c
+            inner join datchiki d on d.id = c.datchik_id
+        where d.proizv_id = p.id
+        );
 
 
 -- ### Задание 6
