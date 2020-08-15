@@ -3,18 +3,17 @@
 -- ## Выборка данных
 
 
--- ### Задание 1
+-- ### Задание 1. Датчики одного производителя
 select * from datchiki where proizv_id = 1;
 
 
--- ### Задание 2
+-- ### Задание 2. Датчики в наличии
 select * from datchiki d, ceny c
     where d.id = c.datchik_id
         and c.nalichie = true;
 
 
--- ### Задание 3
-
+-- ### Задание 3. Расширенный запрос датчиков в наличии
 select * from datchiki d, ceny c, proizvoditel p
     where d.id = c.datchik_id
         and d.proizv_id = p.id
@@ -27,6 +26,7 @@ select * from datchiki d, datchiki d2;
 
 -- ### Задание 5
 
+-- 5.1) Датчики со скидкой больше 10
 select * from datchiki where id in (
     select c.datchik_id from ceny c
         left join datchiki_promo dp on c.datchik_id = dp.datchik_id
@@ -34,6 +34,7 @@ select * from datchiki where id in (
     where skidka > 10
     );
 
+-- 5.2) Датчики для которых предусмотрены акционые предложения
 select * from datchiki d where exists (
     select * from ceny c
         left join datchiki_promo dp on c.datchik_id = dp.datchik_id
@@ -41,26 +42,51 @@ select * from datchiki d where exists (
     where d.id = dp.datchik_id
     );
 
+-- 5.3) Датчики цена которых меньше цены всех датчиков со скидкой больше 10
+select * from datchiki d
+    left join ceny c on d.id = c.datchik_id
+where c.cena < ALL (
+    select c2.cena from datchiki d2
+        left join ceny c2 on c2.datchik_id = d2.id
+        left join datchiki_promo dp on d2.id = dp.datchik_id
+        left join promo p on dp.promo_id = p.id
+    where p.skidka > 10
+);
+
+-- 5.4) Датчики цена которых больше любого датчика со скидкой больше 10
+select * from datchiki d
+    left join ceny c on d.id = c.datchik_id
+where c.cena > ANY (
+    select c2.cena from datchiki d2
+        left join ceny c2 on c2.datchik_id = d2.id
+        left join datchiki_promo dp on d2.id = dp.datchik_id
+        left join promo p on dp.promo_id = p.id
+    where p.skidka > 10
+);
+
+-- 5.5
+
 
 -- ### Задание 6
 
--- 6.1
+-- 6.1) Датчики двух избранных производителей
 select * from datchiki where proizv_id = 2
 union
 select * from datchiki where proizv_id = 3;
 
--- 6.2
+-- 6.2) Датчики производителя фигурирующего во всех группах
 select * from datchiki where proizv_id in (2, 3)
 intersect
 select * from datchiki where proizv_id in (2);
 
--- 6.3
+-- 6.3) Датчики неупомянутого хотя бы в одной группе производителя
 select * from datchiki where proizv_id in (2, 3)
 except
 select * from datchiki where proizv_id in (2);
 
 
 -- ### Задание 7, 9, 10, 11
+-- Представление датчиков с расчётом цены меньше  3000 и с учётом скидки Б 2000
 create view discounts as select * from (
     select d.descr, p.descr as proizv, c.cena,
            cena - (cena * sum(pr.skidka) / 100) as cena_so_skidkoy,
@@ -82,39 +108,40 @@ select * from discounts where cena < 2000;
 
 -- ### Задание 8
 
--- 8.1
+-- 8.1) Датчики с ценами
 select * from datchiki d
     join ceny c on d.id = c.datchik_id;
 
--- 8.2
+-- 8.2)
 select * from datchiki d
     cross join datchiki d2;
 
--- 8.3
+-- 8.3)
 -- MariaDB is not support NATURAL JOIN without (LEFT|RIGHT) direction
 
--- 8.4
+-- 8.4) Датчики с ценами
 select * from datchiki d
     left outer join ceny c on d.id = c.datchik_id;
 
--- 8.5
+-- 8.5)
 select * from datchiki
     natural left outer join ceny_log;
 
--- 8.6
+-- 8.6) Датчики с изменением цены
 select * from datchiki
     natural right outer join ceny_log;
 
+
 -- ### Задание 12
 
--- 12.1
+-- 12.1) Датчики со скидкой больше 5
 select * from datchiki d where id in (
     select datchik_id from datchiki_promo dp
         left join promo p on dp.promo_id = p.id
     where skidka > 5 and dp.datchik_id = d.id);
 
--- 12.2
-select * from datchiki d where id in (
+-- 12.2) Датчики со скидкой меньше или равной 5
+select * from datchiki d where id not in (
     select datchik_id from datchiki_promo dp
         left join promo p on dp.promo_id = p.id
     where skidka > 5 and dp.datchik_id = d.id);
@@ -122,12 +149,14 @@ select * from datchiki d where id in (
 
 -- ## Триггеры
 
+
 -- ### Задание 13
 
 create trigger if not exists task_13
     before update on proizvoditel
 for each row
     update datchiki set proizv_id = NEW.id where proizv_id = OLD.id;
+
 
 -- ### Задание 14
 
@@ -142,6 +171,7 @@ begin
 end; //
 delimiter ;
 
+
 -- ## Задание 15
 
--- WHEN keyword is not supported in MariaDB CREATE TRIGGER statement
+-- MariaDB is not support WHEN keyword in CREATE TRIGGER statement
