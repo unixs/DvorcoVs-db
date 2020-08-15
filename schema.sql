@@ -85,7 +85,9 @@ CREATE TABLE `datchiki` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `descr` varchar(256) NOT NULL,
   `proizv_id` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `datchiki_proizv_id_idx` (`proizv_id`),
+  CONSTRAINT `datchiki_proizv_fk` FOREIGN KEY (`proizv_id`) REFERENCES `proizvoditel` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8 COMMENT='Датчики';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -192,4 +194,4 @@ CREATE TABLE `promo` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2020-08-16  1:52:41
+-- Dump completed on 2020-08-16  2:30:36
